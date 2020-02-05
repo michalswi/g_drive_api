@@ -3,7 +3,7 @@
 
 **Official** Google source & docs are available [here](https://developers.google.com/drive/api/v3/quickstart/go).  
 
-**Hardcoded** in code*:  
+**Hardcoded** values*:  
 ```
 const (
 	driveFolder = "audycje"
@@ -16,13 +16,14 @@ It's related to another repo where we are downloading files to `sourceDir` direc
 
 **Usage:**  
 ```sh
-$ go get -u google.golang.org/api/drive/v3
-$ go get -u golang.org/x/oauth2/google
+$ go build
 
-# upload local files to Drive (create driveFolder first)
-$ ./goapi upload
-# list existing files in Drive
-$ ./goapi list
-# delete driveFolder with all files stored there
-$ ./goapi delete
+# upload local files to Drive/'driveFolder'
+$ ./g_drive_api upload
+
+# list existing files from Drive/'driveFolder'
+$ ./g_drive_api list
+
+# delete 'driveFolder' with all files stored there
+$ ./g_drive_api delete
 ```

@@ -237,11 +237,11 @@ func getFolderID(service *drive.Service) string {
 
 // Remove Drive folder/directory
 // https://developers.google.com/drive/api/v2/reference/files/delete
-// func removeDir(service *drive.Service, folderID string) (*drive.File, error) {
 func removeDir(service *drive.Service, folderID string) {
+	fmt.Printf("Folder ID: %s.\n", folderID)
 	err := service.Files.Delete(folderID).Do()
 	if err != nil {
-		log.Fatalf("An error occurred: %v\n", err)
+		log.Fatalf("Error occurred when deleting Folder: %v\n", err)
 	}
 	fmt.Printf("Folder with ID: %s deleted forever.\n", folderID)
 }
