@@ -20,6 +20,8 @@ import (
 const (
 	driveFolder = "audycje"
 	sourceDir   = "/tmp/workspace"
+	// The maximum number of files to return per page
+	pageSize = 50
 )
 
 var dirID string
@@ -110,21 +112,21 @@ func createFile(service *drive.Service, name string, mimeType string, content io
 func getService() (*drive.Service, error) {
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
-		log.Fatalf("Unable to read client secret file. Err: %v\n", err)
+		log.Fatalf("Unable to read client secret file. Err: %v", err)
 		return nil, err
 	}
 	// If modifying these scopes, delete your previously saved token.json.
 	// config, err := google.ConfigFromJSON(b, drive.DriveMetadataReadonlyScope)
 	config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v\n", err)
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
 		return nil, err
 	}
 	client := getClient(config)
 	// Retrieve Drive client
 	service, err := drive.New(client)
 	if err != nil {
-		log.Fatalf("Cannot create the Google Drive service: %v\n", err)
+		log.Fatalf("Cannot create the Google Drive service: %v", err)
 		return nil, err
 	}
 	return service, err
@@ -141,12 +143,12 @@ func uploadFile(service *drive.Service) {
 	// Create the directory
 	dir, err := createDir(service, driveFolder, "root")
 	if err != nil {
-		log.Fatalf("Could not create dir: %v\n", err)
+		log.Fatalf("Could not create dir: %v", err)
 	}
 	// Create the file and upload its content
 	file, err := createFile(service, "uploaded-image.png", "image/png", f, dir.Id)
 	if err != nil {
-		log.Fatalf("Could not create file: %v\n", err)
+		log.Fatalf("Could not create file: %v", err)
 	}
 	fmt.Printf("File '%s' successfully uploaded in '%s' directory\n", file.Name, dir.Name)
 }
@@ -155,7 +157,7 @@ func uploadFile(service *drive.Service) {
 func multiFilesDirectory(service *drive.Service) {
 	dir, err := createDir(service, driveFolder, "root")
 	if err != nil {
-		log.Fatalf("Could not create dir: %v\n", err)
+		log.Fatalf("Could not create dir: %v", err)
 	}
 	dirID = dir.Id
 	dirName = dir.Name
@@ -178,7 +180,7 @@ func uploadMultiFiles(service *drive.Service, fileName string) {
 	// input: 'file.mp3'
 	file, err := createFile(service, strings.Split(fileName, "/")[3], "audio/mpeg", f, dirID)
 	if err != nil {
-		log.Fatalf("Could not create file: %v\n", err)
+		log.Fatalf("Could not create file: %v", err)
 	}
 
 	fmt.Printf("File '%s' successfully uploaded in '%s' directory\n", file.Name, dirName)
@@ -187,9 +189,9 @@ func uploadMultiFiles(service *drive.Service, fileName string) {
 // Get all files from Drive (get folderID to remove)
 // https://developers.google.com/drive/api/v2/reference/files/list
 func getFiles(service *drive.Service) {
-	r, err := service.Files.List().PageSize(10).Fields("nextPageToken, files(id, name)").Do()
+	r, err := service.Files.List().PageSize(pageSize).Fields("nextPageToken, files(id, name)").Do()
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v\n", err)
+		log.Fatalf("Unable to retrieve files: %v", err)
 	}
 	if len(r.Files) == 0 {
 		fmt.Println("No files in Drive found.")
@@ -208,7 +210,7 @@ func getLocalFiles() []string {
 		return nil
 	})
 	if err != nil {
-		log.Fatalf("Unable to get files: %v\n", err)
+		log.Fatalf("Unable to get files: %v", err)
 	}
 	return files
 }
@@ -217,9 +219,10 @@ func getLocalFiles() []string {
 // https://developers.google.com/drive/api/v2/reference/files/list
 func getFolderID(service *drive.Service) string {
 	var folderID string
-	r, err := service.Files.List().PageSize(10).Fields("nextPageToken, files(id, name)").Do()
+	// if PageSize too small it won't remove folder (it won't be inclueded in list)
+	r, err := service.Files.List().PageSize(pageSize).Fields("nextPageToken, files(id, name)").Do()
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v\n", err)
+		log.Fatalf("Unable to retrieve files: %v", err)
 	}
 	if len(r.Files) == 0 {
 		log.Fatalf("No files in Drive found.")
@@ -238,19 +241,19 @@ func getFolderID(service *drive.Service) string {
 // Remove Drive folder/directory
 // https://developers.google.com/drive/api/v2/reference/files/delete
 func removeDir(service *drive.Service, folderID string) {
-	fmt.Printf("Folder ID: %s.\n", folderID)
+	fmt.Printf("Folder ID: '%s'\n", folderID)
 	err := service.Files.Delete(folderID).Do()
 	if err != nil {
-		log.Fatalf("Error occurred when deleting Folder: %v\n", err)
+		log.Fatalf("Error occurred when deleting Folder: %v", err)
 	}
-	fmt.Printf("Folder with ID: %s deleted forever.\n", folderID)
+	fmt.Printf("Folder with ID: '%s' deleted forever.\n", folderID)
 }
 
 func doList() {
 	fmt.Printf("Printing all files.\n")
 	service, err := getService()
 	if err != nil {
-		log.Fatalf("Could not list files: %v\n", err)
+		log.Fatalf("Could not list files: %v", err)
 	}
 	getFiles(service)
 }
@@ -259,7 +262,7 @@ func doRemoval() {
 	fmt.Printf("Removing folder: '%s'.\n", driveFolder)
 	service, err := getService()
 	if err != nil {
-		log.Fatalf("Could not list files: %v\n", err)
+		log.Fatalf("Could not list files: %v", err)
 	}
 	removeDir(service, getFolderID(service))
 }
@@ -267,7 +270,7 @@ func doRemoval() {
 func doJob() {
 	service, err := getService()
 	if err != nil {
-		log.Fatalf("Could not list files: %v\n", err)
+		log.Fatalf("Could not list files: %v", err)
 	}
 
 	// SINGLE
