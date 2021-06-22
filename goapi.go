@@ -18,8 +18,10 @@ import (
 )
 
 const (
-	driveFolder = "audycje"
-	sourceDir   = "/tmp/workspace"
+	driveFolder    = "audycje"
+	sourceDir      = "/tmp/workspace"
+	APIcredentials = "credentials.json"
+	APItoken       = "token.json"
 	// The maximum number of files to return per page
 	pageSize = 50
 )
@@ -30,13 +32,11 @@ var dirName string
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
-	// created automatically when the authorization flow completes for the first
-	// time.
-	tokFile := "token.json"
-	tok, err := tokenFromFile(tokFile)
+	// created automatically when the authorization flow completes for the first time
+	tok, err := tokenFromFile(APItoken)
 	if err != nil {
 		tok = getTokenFromWeb(config)
-		saveToken(tokFile, tok)
+		saveToken(APItoken, tok)
 	}
 	return config.Client(context.Background(), tok)
 }
@@ -110,7 +110,7 @@ func createFile(service *drive.Service, name string, mimeType string, content io
 
 // https://developers.google.com/drive/api/v3/quickstart/go
 func getService() (*drive.Service, error) {
-	b, err := ioutil.ReadFile("credentials.json")
+	b, err := ioutil.ReadFile(APIcredentials)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file. Err: %v", err)
 		return nil, err
@@ -173,16 +173,13 @@ func uploadMultiFiles(service *drive.Service, fileName string) {
 	if err != nil {
 		log.Fatalf("Cannot open file: %v", err)
 	}
-
 	defer f.Close()
-
 	// Create the file and upload its content
 	// input: 'file.mp3'
 	file, err := createFile(service, strings.Split(fileName, "/")[3], "audio/mpeg", f, dirID)
 	if err != nil {
 		log.Fatalf("Could not create file: %v", err)
 	}
-
 	fmt.Printf("File '%s' successfully uploaded in '%s' directory\n", file.Name, dirName)
 }
 
